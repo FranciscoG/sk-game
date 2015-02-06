@@ -66,13 +66,8 @@ skGame.Play.prototype = {
     this.spawnItemTimer = 0;
     this.itemGroup = game.add.group();
     this.itemGroup.setAll('outOfBoundsKill', true);
-    this.spawnItem(this);
+    this.spawnItem();
     
-    // this.itemGroup.enableBody = true;
-    // this.itemGroup.createMultiple(15, 'item');
-
-    // game.physics.arcade.enable(this.itemGroup);
-
     this.player = game.add.sprite(w/2, this.playerY, 'player');
     game.physics.arcade.enable(this.player);
     this.player.body.collideWorldBounds = true;
@@ -87,7 +82,7 @@ skGame.Play.prototype = {
     // spawning an item every second
     if(this.spawnItemTimer > 1000) {
       this.spawnItemTimer = 0;
-      this.spawnItem(this);
+      this.spawnItem();
     }
 
     this.player.body.velocity.x = 0;
@@ -108,11 +103,11 @@ skGame.Play.prototype = {
       }
     }
 
-    game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
+    //game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
   },
   
   //http://gamedevelopment.tutsplus.com/tutorials/getting-started-with-phaser-building-monster-wants-candy--cms-21723
-  spawnItem: function(game) {
+  spawnItem: function() {
     var h = skGame.h, w = skGame.w, score = skGame.score;
     var dropPos = Math.floor(Math.random()*w);
     var dropOffset = [-27,-36,-36,-38,-48];
@@ -120,10 +115,10 @@ skGame.Play.prototype = {
     var item = game.add.sprite(dropPos, dropOffset[itemType], 'item');
     
     game.physics.enable(item, Phaser.Physics.ARCADE);
-    game.physics.arcade.overlap(game.player, game.itemGroup, game.grabItem, null, this);
+    game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
  
     item.anchor.setTo(0.5, 0.5);
-    game.itemGroup.add(item);
+    this.itemGroup.add(item);
   },
 
   grabItem: function(player, item) {
