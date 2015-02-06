@@ -1,3 +1,4 @@
+ /* global Phaser */
  var skGame = {
   w : 480,
   h : 480,
@@ -6,6 +7,9 @@
 
 function rand(num){ return Math.floor(Math.random() * num); }
 
+/****************************************************************************
+  On Page Load
+*/
 skGame.Load = function (game) {};
 
 skGame.Load.prototype = {
@@ -23,6 +27,9 @@ skGame.Load.prototype = {
   }
 };
 
+/****************************************************************************
+  When all assets are loaded it goes here
+*/
 skGame.Intro = function (game) { };
 
 skGame.Intro.prototype = {
@@ -39,26 +46,32 @@ skGame.Intro.prototype = {
   }
 };
 
+/****************************************************************************
+  This is the actual game logid
+*/
 skGame.Play = function (game) { };
 
 skGame.Play.prototype = {
 
   create: function () {
-    var h = skGame.h;
-    var w = skGame.w;
-    var score = skGame.score;
+     var h = skGame.h, w = skGame.w, score = skGame.score;
     
     game.physics.startSystem(Phaser.Physics.ARCADE);
+    game.physics.arcade.gravity.y = 200;
 
     this.playerY = h - 100;
     score = 0;
     this.cursor = game.input.keyboard.createCursorKeys();
 
-    this.items = game.add.group();
-    this.items.enableBody = true;
-    this.items.createMultiple(15, 'item');
-    this.items.setAll('outOfBoundsKill', true);
-    game.physics.arcade.enable(this.items);
+    this.spawnItemTimer = 0;
+    this.itemGroup = game.add.group();
+    this.itemGroup.setAll('outOfBoundsKill', true);
+    this.spawnItem(this);
+    
+    // this.itemGroup.enableBody = true;
+    // this.itemGroup.createMultiple(15, 'item');
+
+    // game.physics.arcade.enable(this.itemGroup);
 
     this.player = game.add.sprite(w/2, this.playerY, 'player');
     game.physics.arcade.enable(this.player);
@@ -68,6 +81,15 @@ skGame.Play.prototype = {
   },
 
   update: function() {
+    var h = skGame.h, w = skGame.w, score = skGame.score;
+
+    this.spawnItemTimer += this.time.elapsed;
+    // spawning an item every second
+    if(this.spawnItemTimer > 1000) {
+      this.spawnItemTimer = 0;
+      this.spawnItem(this);
+    }
+
     this.player.body.velocity.x = 0;
 
     if (this.cursor.left.isDown) {
@@ -78,7 +100,7 @@ skGame.Play.prototype = {
 
     if (this.game.time.now > this.itemTime) {
       this.itemTime = game.time.now + 250;
-      var item = this.items.getFirstExists(false);
+      var item = this.itemGroup.getFirstExists(false);
       if (item) {
         item.body.setSize(item.width, item.height, 0, 0);
         item.reset(rand(w/item.width-1)*item.width+7, -item.height);
@@ -86,7 +108,22 @@ skGame.Play.prototype = {
       }
     }
 
-    game.physics.arcade.overlap(this.player, this.items, this.grabItem, null, this);
+    game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
+  },
+  
+  //http://gamedevelopment.tutsplus.com/tutorials/getting-started-with-phaser-building-monster-wants-candy--cms-21723
+  spawnItem: function(game) {
+    var h = skGame.h, w = skGame.w, score = skGame.score;
+    var dropPos = Math.floor(Math.random()*w);
+    var dropOffset = [-27,-36,-36,-38,-48];
+    var itemType = Math.floor(Math.random()*5);
+    var item = game.add.sprite(dropPos, dropOffset[itemType], 'item');
+    
+    game.physics.enable(item, Phaser.Physics.ARCADE);
+    game.physics.arcade.overlap(game.player, game.itemGroup, game.grabItem, null, this);
+ 
+    item.anchor.setTo(0.5, 0.5);
+    game.itemGroup.add(item);
   },
 
   grabItem: function(player, item) {
@@ -105,18 +142,8 @@ skGame.Play.prototype = {
 
 };
 
-//http://gamedevelopment.tutsplus.com/tutorials/getting-started-with-phaser-building-monster-wants-candy--cms-21723
-skGame.item = {
-    spawniTem: function(game) {
-        // ...
-    },
-    getItem: function(item) {
-        // ...
-    },
-    removeItem: function(item) {
-        // ...
-    }
-};
+
+
 
 var game = new Phaser.Game(skGame.w, skGame.h, Phaser.AUTO, 'skeletonGame');
 
