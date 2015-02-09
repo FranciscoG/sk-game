@@ -17,10 +17,14 @@ skGame.Load.prototype = {
     game.stage.backgroundColor = '#000';
     var label = game.add.text(skGame.w/2, skGame.h/2, 'loading...', { font: '30px Arial', fill: '#fff' });
     label.anchor.setTo(0.5, 0.5);
-    game.load.image('player', 'game/assets/player.png');
-    game.load.image('item', 'game/assets/beads1.png');
+    //game.load.image('player', 'game/assets/skeleton-sprite-sheet.png');
+    //game.load.image('item', 'game/assets/beads1.png');
+    
+    game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 100, 120);
+    game.load.spritesheet('items' , 'game/assets/beads-sprite.png', 36, 46);
 
-    // game.load.audio('bgmusic', 'game/assets/ikoiko.wav');
+    game.load.audio('pickup', 'game/assets/pickup.wav');
+    game.load.audio('coin', 'game/assets/get_coin.wav');
   },
   create: function () {
     game.state.start('Intro');
@@ -59,7 +63,6 @@ skGame.Play.prototype = {
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
 
-    this.playerY = h - 100;
     score = 0;
     this.cursor = game.input.keyboard.createCursorKeys();
 
@@ -68,9 +71,17 @@ skGame.Play.prototype = {
     this.itemGroup.setAll('outOfBoundsKill', true);
     this.spawnItem();
     
-    this.player = game.add.sprite(w/2, this.playerY, 'player');
+    // add the player to the screen
+    this.player = game.add.sprite(w/2, h, 'player');
+    this.player.anchor.setTo(0.5,1);
+    // setup running animation
+    this.player.animations.add('run', [1,2,3,4,5,6,7,8], 15, true);
     game.physics.arcade.enable(this.player);
     this.player.body.collideWorldBounds = true;
+
+    //audio 
+    this.pickup = game.add.audio('pickup');
+    this.coin = game.add.audio('coin');
 
     this.scoreText = game.add.text(10, 10, "0", { font: '30px Arial', fill: '#fff'});
   },
@@ -89,8 +100,14 @@ skGame.Play.prototype = {
 
     if (this.cursor.left.isDown) {
       this.player.body.velocity.x = -350;
+      this.player.animations.play('run');
+      this.player.scale.x = 1;
     } else if (this.cursor.right.isDown) {
        this.player.body.velocity.x = 350;
+       this.player.scale.x = -1;
+       this.player.animations.play('run');
+    } else {
+      this.player.frame = 0;
     }
 
     if (this.game.time.now > this.itemTime) {
@@ -103,17 +120,24 @@ skGame.Play.prototype = {
       }
     }
 
-    //game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
   },
   
   //http://gamedevelopment.tutsplus.com/tutorials/getting-started-with-phaser-building-monster-wants-candy--cms-21723
   spawnItem: function() {
     var h = skGame.h, w = skGame.w, score = skGame.score;
-    var dropPos = Math.floor(Math.random()*w);
-    var dropOffset = [-27,-36,-36,-38,-48];
-    var itemType = Math.floor(Math.random()*5);
-    var item = game.add.sprite(dropPos, dropOffset[itemType], 'item');
     
+    // the X coordinate where this is dropping from
+    var spriteW = 36;
+    var sp = Math.floor(w / spriteW);
+    var dropPos = rand(sp);
+
+    // now place it on screen by adding it to a group
+    var item = game.add.sprite(dropPos * spriteW + (spriteW/2), 0, 'items');
+
+    // get a random Item from the spritesheet 
+    var itemType = rand(7);
+    item.frame = itemType;
+
     game.physics.enable(item, Phaser.Physics.ARCADE);
     game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
  
@@ -122,14 +146,20 @@ skGame.Play.prototype = {
   },
 
   grabItem: function(player, item) {
-      // play audio
+
+      if (item._frame.index === 6) {
+        this.updateScore(5);
+        this.coin.play('', 0, 0.2);
+      } else {
+        this.updateScore(1);
+        this.pickup.play('', 0, 0.2);
+      }
       item.kill();
-      this.updateScore(1);
   },
 
   updateScore: function (n) {
       skGame.score += n;
-      this.scoreText.content = skGame.scorescore;
+      this.scoreText.text = skGame.score;
   },
 
   clear: function() {
