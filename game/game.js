@@ -17,12 +17,11 @@ skGame.Load.prototype = {
     game.stage.backgroundColor = '#000';
     var label = game.add.text(skGame.w/2, skGame.h/2, 'loading...', { font: '30px Arial', fill: '#fff' });
     label.anchor.setTo(0.5, 0.5);
-    //game.load.image('player', 'game/assets/skeleton-sprite-sheet.png');
-    //game.load.image('item', 'game/assets/beads1.png');
     
     game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 100, 120);
     game.load.spritesheet('items' , 'game/assets/beads-sprite.png', 36, 46);
 
+    // make more sounds here: http://www.bfxr.net/
     game.load.audio('pickup', 'game/assets/pickup.wav');
     game.load.audio('coin', 'game/assets/get_coin.wav');
   },
