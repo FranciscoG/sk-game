@@ -19,7 +19,7 @@ skGame.Load.prototype = {
     label.anchor.setTo(0.5, 0.5);
     
     game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 100, 120);
-    game.load.spritesheet('items' , 'game/assets/beads-sprite.png', 36, 46);
+    game.load.spritesheet('items' , 'game/assets/items.png', 60, 60);
 
     // make more sounds here: http://www.bfxr.net/
     game.load.audio('pickup', 'game/assets/pickup.wav');
@@ -73,14 +73,20 @@ skGame.Play.prototype = {
     // add the player to the screen
     this.player = game.add.sprite(w/2, h, 'player');
     this.player.anchor.setTo(0.5,1);
-    // setup running animation
+    
+    // setup animations
     this.player.animations.add('run', [1,2,3,4,5,6,7,8], 15, true);
+    this.player.animations.add('hurt', [9,10], 15, true);
+    this.isHurt = false;
+    
     game.physics.arcade.enable(this.player);
     this.player.body.collideWorldBounds = true;
 
-    //audio 
-    this.pickup = game.add.audio('pickup');
-    this.coin = game.add.audio('coin');
+    //audio
+    this.sounds = {};
+    this.sounds.pickup = game.add.audio('pickup');
+    this.sounds.coin = game.add.audio('coin');
+    //this.sounds.hurt = game.add.audio('pain');
 
     this.scoreText = game.add.text(10, 10, "0", { font: '30px Arial', fill: '#fff'});
   },
@@ -97,15 +103,19 @@ skGame.Play.prototype = {
 
     this.player.body.velocity.x = 0;
 
-    if (this.cursor.left.isDown) {
+    if (this.isHurt) {
+      this.player.animations.play('hurt');
+    }
+
+    if (this.cursor.left.isDown && !this.isHurt) {
       this.player.body.velocity.x = -350;
       this.player.animations.play('run');
       this.player.scale.x = 1;
-    } else if (this.cursor.right.isDown) {
+    } else if (this.cursor.right.isDown && !this.isHurt) {
        this.player.body.velocity.x = 350;
        this.player.scale.x = -1;
        this.player.animations.play('run');
-    } else {
+    } else if (!this.isHurt) {
       this.player.frame = 0;
     }
 
@@ -126,7 +136,7 @@ skGame.Play.prototype = {
     var h = skGame.h, w = skGame.w, score = skGame.score;
     
     // the X coordinate where this is dropping from
-    var spriteW = 36;
+    var spriteW = 60;
     var sp = Math.floor(w / spriteW);
     var dropPos = rand(sp);
 
@@ -134,7 +144,7 @@ skGame.Play.prototype = {
     var item = game.add.sprite(dropPos * spriteW + (spriteW/2), 0, 'items');
 
     // get a random Item from the spritesheet 
-    var itemType = rand(7);
+    var itemType = rand(10);
     item.frame = itemType;
 
     game.physics.enable(item, Phaser.Physics.ARCADE);
@@ -146,27 +156,48 @@ skGame.Play.prototype = {
 
   grabItem: function(player, item) {
 
-      if (item._frame.index === 6) {
-        this.updateScore(5);
-        this.coin.play('', 0, 0.2);
-      } else {
-        this.updateScore(1);
-        this.pickup.play('', 0, 0.2);
+      switch(item._frame.index) {
+        case 0:
+          this.updateScore(5);
+          this.sounds.coin.play('', 0, 0.2);
+          break;
+        case 7:
+        case 8:
+        case 9:
+          this.isHurt = true;
+          this.reduceLife();
+          //this.sounds.hurt.play('', 0, 0.2);
+          var self = this;
+          setTimeout(function(){
+            self.isHurt = false;
+          }, 800);
+          break;
+        default:
+          this.updateScore(1);
+          this.sounds.pickup.play('', 0, 0.2);
       }
+
       item.kill();
   },
 
   updateScore: function (n) {
+    if (!this.isHurt) {
       skGame.score += n;
       this.scoreText.text = skGame.score;
+    }
+  },
+
+  reduceLife: function(){
+    // reduce life by 1
+    // check total life
+    // if 0 then change game state to game over
   },
 
   clear: function() {
+    // reset life
   }
 
 };
-
-
 
 
 var game = new Phaser.Game(skGame.w, skGame.h, Phaser.AUTO, 'skeletonGame');
