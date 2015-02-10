@@ -23,6 +23,12 @@ skGame.Load.prototype = {
     game.stage.backgroundColor = '#000';
     var label = game.add.text(skGame.w/2, skGame.h/2, 'loading...', { font: '30px Arial', fill: '#fff' });
     label.anchor.setTo(0.5, 0.5);
+
+    // scale game for smaller than 480px
+    game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+    game.scale.pageAlignHorizontally = true;
+    game.scale.pageAlignVertically = true;
+    game.scale.setScreenSize(true);
     
     // sprite sheets
     game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 70, 110);
@@ -56,12 +62,6 @@ skGame.Intro = function (game) { };
 
 skGame.Intro.prototype = {
   create: function () {
-    // scale game for smaller than 480px
-    game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-    game.scale.pageAlignHorizontally = true;
-    game.scale.pageAlignVertically = true;
-    game.scale.setScreenSize(true);
-
     this.cursor = game.input.keyboard.createCursorKeys();
     var start = game.add.sprite(0, -1 * skGame.h, 'start_screen');
     game.add.tween(start).to({y: 0}, 1300, Phaser.Easing.Bounce.Out, true);
@@ -123,7 +123,7 @@ skGame.Play.prototype = {
     this.cursor = game.input.keyboard.createCursorKeys();
 
     // create Group of items
-    this.spawnItemTimer = 0;
+    //this.spawnItemTimer = 0;
     this.itemGroup = game.add.group();
     this.itemGroup.setAll('outOfBoundsKill', true);
     this.spawnItem();
@@ -154,7 +154,7 @@ skGame.Play.prototype = {
 
     // shrink the bounding box of the player because there's some blank
     // space that allows collisions
-    var heightOffset = 0;
+    var heightOffset = 30;
     this.player.body.setSize(60, 110 + heightOffset, 0, 0 - heightOffset);
 
     //audio
@@ -166,6 +166,9 @@ skGame.Play.prototype = {
     
     this.sounds.parade = game.add.audio('parade');
     this.sounds.parade.play('', 0, 1, true);
+
+    // http://invrse.co/phaser-cheatsheet/
+    this.looping = game.time.events.loop(1000, this.spawnItem, this);
 
   },
 
@@ -183,19 +186,8 @@ skGame.Play.prototype = {
   update: function() {
     var h = skGame.h, w = skGame.w, score = skGame.score;
 
-    this.spawnItemTimer += this.time.elapsed;
-    
-    var timeArray = [1000,1200,1500,1800,2000];
-    var num = rand(timeArray.length);
-   
-    // spawning an item every second
-    if(this.spawnItemTimer > 1000) {
-      this.spawnItemTimer = 0;
-      this.spawnItem();
-    }
-
     // rotate the item
-    this.itemGroup.forEach(function(item){
+    this.itemGroup.forEachAlive(function(item){
         item.angle += item.rotateMe || 0;
     });
     
@@ -227,7 +219,7 @@ skGame.Play.prototype = {
   //http://gamedevelopment.tutsplus.com/tutorials/getting-started-with-phaser-building-monster-wants-candy--cms-21723
   spawnItem: function() {
     var h = skGame.h, w = skGame.w;
-    
+
     // figure out how many columns available that are the width of the sprite
     var spriteW = 60; 
     var sp = Math.floor(w / spriteW); // calc number of columns in stage
@@ -257,7 +249,7 @@ skGame.Play.prototype = {
 
     // enable physics
     game.physics.enable(item, Phaser.Physics.ARCADE);
-    // shrink the bounding box of the item because there's some blank
+    // shrink the bounding box of the item because there's some transparent area
     item.body.setSize(55, 60, 0, 0);
     item.anchor.setTo(0.5, 0.5);
     this.itemGroup.add(item);
@@ -266,7 +258,6 @@ skGame.Play.prototype = {
 
   grabItem: function(player, item) {
     item.kill();
-    console.log(item);
 
     var self = this;
     var actions = {
