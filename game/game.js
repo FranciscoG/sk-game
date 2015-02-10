@@ -38,6 +38,7 @@ skGame.Load.prototype = {
     game.load.audio('pickup', 'game/assets/pickup.wav');
     game.load.audio('coin', 'game/assets/get_coin.wav');
     game.load.audio('hurt', 'game/assets/hurt.wav');
+    game.load.audio('necklace', 'game/assets/necklace.wav');
   },
   create: function () {
     game.state.start('Intro');
@@ -151,6 +152,7 @@ skGame.Play.prototype = {
     this.sounds.pickup = game.add.audio('pickup');
     this.sounds.coin = game.add.audio('coin');
     this.sounds.hurt = game.add.audio('hurt');
+    this.sounds.necklace = game.add.audio('necklace');
 
   },
 
@@ -182,6 +184,9 @@ skGame.Play.prototype = {
       this.spawnItemTimer = 0;
       this.spawnItem();
     }
+    this.itemGroup.forEach(function(item){
+        item.angle += item.rotateMe || 0;
+    });
 
     this.player.body.velocity.x = 0;
 
@@ -221,12 +226,18 @@ skGame.Play.prototype = {
     var item = game.add.sprite(dropPos * spriteW + (spriteW/2), 0, 'items');
 
     // get a random Item from the spritesheet 
-    var itemType = rand(10);
-    item.frame = itemType;
-    if (itemType >= 9) {
+    var itemType = rand(11);
+    if (itemType === 10) {
+      item.animations.add('blink', [17,18], 10, true);
+      item.animations.play('blink');
+    } else if (itemType === 9) {
       item.animations.add('spin', [9,10,11,12,13,14,15,16], 10, true);
       item.animations.play('spin');
+    } else {
+      item.frame = itemType;
     }
+    item.rotateMe = (Math.random()*4)-2;
+
 
     game.physics.enable(item, Phaser.Physics.ARCADE);
     // shrink the bounding box of the item because there's some blank
@@ -234,7 +245,7 @@ skGame.Play.prototype = {
 
     game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
  
-    item.anchor.setTo(0.5, 1);
+    item.anchor.setTo(0.5, 0.5);
     this.itemGroup.add(item);
   },
 
@@ -246,9 +257,12 @@ skGame.Play.prototype = {
       this.isHurt = true;
       this.sounds.hurt.play('', 0, 0.2);
       this.hurtTime = this.game.time.now;
-    } else if (i >= 9) {
+    } else if (i >= 9 && i <= 16) {
       this.updateScore(500);
       this.sounds.coin.play('', 0, 0.2);
+    } else if(i > 16) {
+      this.updateScore(1000);
+      this.sounds.necklace.play('', 0, 0.2);
     } else {
       this.updateScore(100);
       this.sounds.pickup.play('', 0, 0.2);
