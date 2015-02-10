@@ -56,6 +56,12 @@ skGame.Intro = function (game) { };
 
 skGame.Intro.prototype = {
   create: function () {
+    // scale game for smaller than 480px
+    game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+    game.scale.pageAlignHorizontally = true;
+    game.scale.pageAlignVertically = true;
+    game.scale.setScreenSize(true);
+
     this.cursor = game.input.keyboard.createCursorKeys();
     var start = game.add.sprite(0, -1 * skGame.h, 'start_screen');
     game.add.tween(start).to({y: 0}, 1300, Phaser.Easing.Bounce.Out, true);
@@ -177,13 +183,9 @@ skGame.Play.prototype = {
   update: function() {
     var h = skGame.h, w = skGame.w, score = skGame.score;
 
-    // game.onBlur.add(function() {
-    //   console.log("BLURRED");
-    // }, this);
-
     this.spawnItemTimer += this.time.elapsed;
     
-    var timeArray = [500,800,1000,1200,1500,1800,2000];
+    var timeArray = [1000,1200,1500,1800,2000];
     var num = rand(timeArray.length);
    
     // spawning an item every second
@@ -196,7 +198,7 @@ skGame.Play.prototype = {
     this.itemGroup.forEach(function(item){
         item.angle += item.rotateMe || 0;
     });
-
+    
     this.player.body.velocity.x = 0;
 
     // if player is hurt do this
@@ -251,21 +253,19 @@ skGame.Play.prototype = {
       item.itemName = "bad_item";
       item.frame = itemType;
     }
-
     item.rotateMe = (Math.random()*4)-2;
 
+    // enable physics
     game.physics.enable(item, Phaser.Physics.ARCADE);
     // shrink the bounding box of the item because there's some blank
     item.body.setSize(55, 60, 0, 0);
-
-    game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
- 
     item.anchor.setTo(0.5, 0.5);
     this.itemGroup.add(item);
+    game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
   },
 
   grabItem: function(player, item) {
-    var i = item._frame.index;
+    item.kill();
     console.log(item);
 
     var self = this;
@@ -291,8 +291,6 @@ skGame.Play.prototype = {
     };
 
     actions[item.itemName]();
-
-    item.kill();
   },
 
   showScoreOnHit: function(score) {
