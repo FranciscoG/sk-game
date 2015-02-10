@@ -50,6 +50,27 @@ skGame.Intro.prototype = {
 };
 
 /****************************************************************************
+  Game over
+*/
+skGame.Over = function (game) { };
+
+skGame.Over.prototype = {
+  create: function () {
+    var label = game.add.text(skGame.w/2, skGame.h/2, 'Game Over Man, press Up to start again', { font: '20px Arial', fill: '#fff' });
+    label.anchor.setTo(0.5, 0.5);
+
+    this.cursor = game.input.keyboard.createCursorKeys();
+    this.time = this.game.time.now + 800;
+  },
+
+  update: function() {
+    if (this.game.time.now > this.time && this.cursor.up.isDown) {
+      game.state.start('Play');
+    }
+  }
+};
+
+/****************************************************************************
   This is the actual game logid
 */
 skGame.Play = function (game) { };
@@ -57,8 +78,9 @@ skGame.Play = function (game) { };
 skGame.Play.prototype = {
 
   create: function () {
-     var h = skGame.h, w = skGame.w, score = skGame.score;
-    
+    var h = skGame.h, w = skGame.w, score = skGame.score;
+    this.health = 3;
+
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
 
@@ -72,7 +94,7 @@ skGame.Play.prototype = {
     
     // add the player to the screen
     this.player = game.add.sprite(w/2, h, 'player');
-    this.player.anchor.setTo(0.5,1);
+    this.player.anchor.setTo(0.5,0);
     
     // setup animations
     this.player.animations.add('run', [1,2,3,4,5,6,7,8], 15, true);
@@ -105,6 +127,10 @@ skGame.Play.prototype = {
 
     if (this.isHurt) {
       this.player.animations.play('hurt');
+    }
+
+    if (this.game.time.now - this.hurtTime >= 800) {
+      this.isHurt = false;
     }
 
     if (this.cursor.left.isDown && !this.isHurt) {
@@ -164,13 +190,16 @@ skGame.Play.prototype = {
         case 7:
         case 8:
         case 9:
+          this.health -= 1;
+          if (this.health === 0) {
+            this.clear();
+            game.state.start('Over');
+          }
           this.isHurt = true;
           this.reduceLife();
           //this.sounds.hurt.play('', 0, 0.2);
           var self = this;
-          setTimeout(function(){
-            self.isHurt = false;
-          }, 800);
+          this.hurtTime = this.game.time.now;
           break;
         default:
           this.updateScore(1);
@@ -194,7 +223,7 @@ skGame.Play.prototype = {
   },
 
   clear: function() {
-    // reset life
+    this.health = 3;
   }
 
 };
@@ -205,6 +234,7 @@ var game = new Phaser.Game(skGame.w, skGame.h, Phaser.AUTO, 'skeletonGame');
 game.state.add('Load', skGame.Load);
 game.state.add('Intro', skGame.Intro);
 game.state.add('Play', skGame.Play);
+game.state.add('Over', skGame.Over);
 
 game.state.start('Load');
 
