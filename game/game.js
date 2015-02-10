@@ -71,7 +71,7 @@ skGame.Over.prototype = {
 };
 
 /****************************************************************************
-  This is the actual game logid
+  This is the actual game logic
 */
 skGame.Play = function (game) { };
 
@@ -127,10 +127,9 @@ skGame.Play.prototype = {
 
     if (this.isHurt) {
       this.player.animations.play('hurt');
-    }
-
-    if (this.game.time.now - this.hurtTime >= 800) {
-      this.isHurt = false;
+      if (this.game.time.now - this.hurtTime >= 500) {
+        this.isHurt = false;
+      }
     }
 
     if (this.cursor.left.isDown && !this.isHurt) {
@@ -193,7 +192,6 @@ skGame.Play.prototype = {
           this.reduceLife();
           this.isHurt = true;
           //this.sounds.hurt.play('', 0, 0.2);
-          var self = this;
           this.hurtTime = this.game.time.now;
           break;
         default:
