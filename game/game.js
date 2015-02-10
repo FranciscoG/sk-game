@@ -10,6 +10,7 @@ function rand(num){ return Math.floor(Math.random() * num); }
 /****************************************************************************
   On Page Load
 */
+
 skGame.Load = function (game) {};
 
 skGame.Load.prototype = {
@@ -18,9 +19,15 @@ skGame.Load.prototype = {
     var label = game.add.text(skGame.w/2, skGame.h/2, 'loading...', { font: '30px Arial', fill: '#fff' });
     label.anchor.setTo(0.5, 0.5);
     
+    // sprite sheets
     game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 100, 120);
     game.load.spritesheet('items' , 'game/assets/items.png', 60, 60);
+    
+    // static images
     game.load.image('heart', 'game/assets/heart.png');
+    game.load.image('game_over', 'game/assets/game-over.png');
+    game.load.image('start_screen', 'game/assets/start-screen.png');
+    game.load.image('bg', 'game/assets/bg.png');
 
     // make more sounds here: http://www.bfxr.net/
     game.load.audio('pickup', 'game/assets/pickup.wav');
@@ -40,14 +47,14 @@ skGame.Intro = function (game) { };
 skGame.Intro.prototype = {
   create: function () {
     this.cursor = game.input.keyboard.createCursorKeys();
-    var label = game.add.text(skGame.w/2, skGame.h/2, 'Press Left or Right to begin', { font: '30px Arial', fill: '#fff' });
-    label.anchor.setTo(0.5, 0.5);
+    game.add.sprite(0, 0, 'start_screen');
     // start bgmusic music here?
   },
 
   update: function() {
-    if (this.cursor.left.isDown || this.cursor.right.isDown)
+    if (this.cursor.left.isDown || this.cursor.right.isDown) {
       game.state.start('Play');
+    }
   }
 };
 
@@ -58,8 +65,9 @@ skGame.Over = function (game) { };
 
 skGame.Over.prototype = {
   create: function () {
-    var label = game.add.text(skGame.w/2, skGame.h/2, 'Game Over Man, press Up to start again', { font: '20px Arial', fill: '#fff' });
-    label.anchor.setTo(0.5, 0.5);
+    
+    game.add.sprite(0, 0, 'bg');
+    game.add.sprite(0, 0, 'game_over');
 
     this.cursor = game.input.keyboard.createCursorKeys();
     this.time = this.game.time.now + 800;
@@ -82,36 +90,48 @@ skGame.Play.prototype = {
   create: function () {
     var h = skGame.h, w = skGame.w, score = skGame.score;
 
+    // add the background
+    game.add.sprite(0, 0, 'bg');
+
+    // initiate game physics
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
+    game.physics.arcade.setBounds(0, 0, w, h - 29);
 
+    // setup score
     score = 0;
+    this.scoreText = game.add.text(10, 10, "0", { font: '30px Arial', fill: '#fff'});
+
+    // inituate cursor key inputs
     this.cursor = game.input.keyboard.createCursorKeys();
 
+    // create Group of items
     this.spawnItemTimer = 0;
     this.itemGroup = game.add.group();
     this.itemGroup.setAll('outOfBoundsKill', true);
     this.spawnItem();
 
+    // add hearts to screen
     this.health = 3;
     this.heartGroup = game.add.group();
-    var heart, i = 3, x = w - 30;
+    var heart,
+        i = this.health,
+        x = w - 40;
     while (i > 0) {
       heart = game.add.sprite(x, 10, 'heart');
       this.heartGroup.add(heart);
-      x = x - 30;
+      x = x - 35;
       i--;
     }
     
     // add the player to the screen
-    this.player = game.add.sprite(w/2, h, 'player');
+    this.player = game.add.sprite(w/2, h - 30, 'player');
     this.player.anchor.setTo(0.5,0);
     
-    // setup animations
+    // setup player
     this.player.animations.add('run', [1,2,3,4,5,6,7,8], 15, true);
     this.player.animations.add('hurt', [9,10], 15, true);
     this.isHurt = false;
-    
     game.physics.arcade.enable(this.player);
     this.player.body.collideWorldBounds = true;
 
@@ -121,11 +141,14 @@ skGame.Play.prototype = {
     this.sounds.coin = game.add.audio('coin');
     this.sounds.hurt = game.add.audio('hurt');
 
-    this.scoreText = game.add.text(10, 10, "0", { font: '30px Arial', fill: '#fff'});
   },
 
   update: function() {
     var h = skGame.h, w = skGame.w, score = skGame.score;
+
+    // game.onBlur.add(function() {
+    //   console.log("BLURRED");
+    // }, this);
 
     this.spawnItemTimer += this.time.elapsed;
     // spawning an item every second
@@ -136,6 +159,7 @@ skGame.Play.prototype = {
 
     this.player.body.velocity.x = 0;
 
+    // if player is hurt do this
     if (this.isHurt) {
       this.player.animations.play('hurt');
       if (this.game.time.now - this.hurtTime >= 500) {
@@ -143,6 +167,7 @@ skGame.Play.prototype = {
       }
     }
 
+    // when player is moving
     if (this.cursor.left.isDown && !this.isHurt) {
       this.player.body.velocity.x = -350;
       this.player.animations.play('run');
@@ -154,6 +179,7 @@ skGame.Play.prototype = {
     } else if (!this.isHurt) {
       this.player.frame = 0;
     }
+
 
     if (this.game.time.now > this.itemTime) {
       this.itemTime = game.time.now + 250;
@@ -169,7 +195,7 @@ skGame.Play.prototype = {
   
   //http://gamedevelopment.tutsplus.com/tutorials/getting-started-with-phaser-building-monster-wants-candy--cms-21723
   spawnItem: function() {
-    var h = skGame.h, w = skGame.w, score = skGame.score;
+    var h = skGame.h, w = skGame.w;
     
     // the X coordinate where this is dropping from
     var spriteW = 60;
@@ -194,7 +220,7 @@ skGame.Play.prototype = {
 
       switch(item._frame.index) {
         case 0:
-          this.updateScore(5);
+          this.updateScore(500);
           this.sounds.coin.play('', 0, 0.2);
           break;
         case 7:
@@ -206,7 +232,7 @@ skGame.Play.prototype = {
           this.hurtTime = this.game.time.now;
           break;
         default:
-          this.updateScore(1);
+          this.updateScore(100);
           this.sounds.pickup.play('', 0, 0.2);
       }
 
@@ -223,16 +249,11 @@ skGame.Play.prototype = {
   reduceLife: function(){
     this.health -= 1;
     if (this.health === 0) {
-      this.clear();
       game.state.start('Over');
     } else {
       var heart = this.heartGroup.getFirstExists(true);
       heart.kill();
     }
-  },
-
-  clear: function() {
-    this.health = 3;
   }
 
 };
