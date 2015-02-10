@@ -20,10 +20,12 @@ skGame.Load.prototype = {
     
     game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 100, 120);
     game.load.spritesheet('items' , 'game/assets/items.png', 60, 60);
+    game.load.image('heart', 'game/assets/heart.png');
 
     // make more sounds here: http://www.bfxr.net/
     game.load.audio('pickup', 'game/assets/pickup.wav');
     game.load.audio('coin', 'game/assets/get_coin.wav');
+    game.load.audio('hurt', 'game/assets/hurt.wav');
   },
   create: function () {
     game.state.start('Intro');
@@ -79,7 +81,6 @@ skGame.Play.prototype = {
 
   create: function () {
     var h = skGame.h, w = skGame.w, score = skGame.score;
-    this.health = 3;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
@@ -91,6 +92,16 @@ skGame.Play.prototype = {
     this.itemGroup = game.add.group();
     this.itemGroup.setAll('outOfBoundsKill', true);
     this.spawnItem();
+
+    this.health = 3;
+    this.heartGroup = game.add.group();
+    var heart, i = 3, x = w - 30;
+    while (i > 0) {
+      heart = game.add.sprite(x, 10, 'heart');
+      this.heartGroup.add(heart);
+      x = x - 30;
+      i--;
+    }
     
     // add the player to the screen
     this.player = game.add.sprite(w/2, h, 'player');
@@ -108,7 +119,7 @@ skGame.Play.prototype = {
     this.sounds = {};
     this.sounds.pickup = game.add.audio('pickup');
     this.sounds.coin = game.add.audio('coin');
-    //this.sounds.hurt = game.add.audio('pain');
+    this.sounds.hurt = game.add.audio('hurt');
 
     this.scoreText = game.add.text(10, 10, "0", { font: '30px Arial', fill: '#fff'});
   },
@@ -191,7 +202,7 @@ skGame.Play.prototype = {
         case 9:
           this.reduceLife();
           this.isHurt = true;
-          //this.sounds.hurt.play('', 0, 0.2);
+          this.sounds.hurt.play('', 0, 0.2);
           this.hurtTime = this.game.time.now;
           break;
         default:
@@ -214,6 +225,9 @@ skGame.Play.prototype = {
     if (this.health === 0) {
       this.clear();
       game.state.start('Over');
+    } else {
+      var heart = this.heartGroup.getFirstExists(true);
+      heart.kill();
     }
   },
 
