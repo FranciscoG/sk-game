@@ -142,7 +142,7 @@ skGame.Play.prototype = {
 
     // shrink the bounding box of the player because there's some blank
     // space that allows collisions
-    this.player.body.setSize(60, 110, 0, 0);
+    this.player.body.setSize(60, 110, 0, -1);
 
     //audio
     this.sounds = {};
@@ -198,17 +198,6 @@ skGame.Play.prototype = {
        this.player.animations.play('run');
     } else if (!this.isHurt) {
       this.player.frame = 0;
-    }
-
-
-    if (this.game.time.now > this.itemTime) {
-      this.itemTime = game.time.now + 250;
-      var item = this.itemGroup.getFirstExists(false);
-      if (item) {
-        item.body.setSize(item.width, item.height, 0, 0);
-        item.reset(rand(w/item.width-1)*item.width+7, -item.height);
-        item.body.velocity.y = 300;
-      }
     }
 
   },
@@ -273,8 +262,18 @@ skGame.Play.prototype = {
       item.kill();
   },
 
+  showScoreOnHit: function(score) {
+    var h = skGame.h, w = skGame.w;
+    var x = this.player.position.x;
+    var y = this.player.position.y;
+    var myText = game.add.text(x, y, score , { font: '20px Arial', fill: '#fff' });
+    game.add.tween(myText).to({y: h/2}, 600, Phaser.Easing.Linear.None, true);
+    game.add.tween(myText).to({alpha: 0}, 600, Phaser.Easing.Linear.None, true);
+  },
+  
   updateScore: function (n) {
     if (!this.isHurt) {
+      this.showScoreOnHit(n);
       skGame.score += n;
       this.scoreText.text = skGame.score;
     }
