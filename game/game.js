@@ -190,13 +190,8 @@ skGame.Play.prototype = {
         case 7:
         case 8:
         case 9:
-          this.health -= 1;
-          if (this.health === 0) {
-            this.clear();
-            game.state.start('Over');
-          }
-          this.isHurt = true;
           this.reduceLife();
+          this.isHurt = true;
           //this.sounds.hurt.play('', 0, 0.2);
           var self = this;
           this.hurtTime = this.game.time.now;
@@ -217,9 +212,11 @@ skGame.Play.prototype = {
   },
 
   reduceLife: function(){
-    // reduce life by 1
-    // check total life
-    // if 0 then change game state to game over
+    this.health -= 1;
+    if (this.health === 0) {
+      this.clear();
+      game.state.start('Over');
+    }
   },
 
   clear: function() {
