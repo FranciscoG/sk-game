@@ -39,6 +39,10 @@ skGame.Load.prototype = {
     game.load.audio('coin', 'game/assets/get_coin.wav');
     game.load.audio('hurt', 'game/assets/hurt.wav');
     game.load.audio('necklace', 'game/assets/necklace.wav');
+    
+    // parade sounds source: https://www.freesound.org/people/soundesigner/sounds/116399/
+    game.load.audio('parade', 'game/assets/parade.wav', true);
+
   },
   create: function () {
     game.state.start('Intro');
@@ -153,6 +157,9 @@ skGame.Play.prototype = {
     this.sounds.coin = game.add.audio('coin');
     this.sounds.hurt = game.add.audio('hurt');
     this.sounds.necklace = game.add.audio('necklace');
+    
+    this.sounds.parade = game.add.audio('parade');
+    this.sounds.parade.play('', 0, 1, true);
 
   },
 
@@ -184,6 +191,8 @@ skGame.Play.prototype = {
       this.spawnItemTimer = 0;
       this.spawnItem();
     }
+
+    // rotate the item
     this.itemGroup.forEach(function(item){
         item.angle += item.rotateMe || 0;
     });
@@ -230,14 +239,20 @@ skGame.Play.prototype = {
     if (itemType === 10) {
       item.animations.add('blink', [17,18], 10, true);
       item.animations.play('blink');
+      item.itemName = "necklace";
     } else if (itemType === 9) {
-      item.animations.add('spin', [9,10,11,12,13,14,15,16], 10, true);
-      item.animations.play('spin');
-    } else {
+      item.animations.add('coin_twirl', [9,10,11,12,13,14,15,16], 10, true);
+      item.animations.play('coin_twirl');
+      item.itemName = "coin";
+    } else if (itemType <= 5 ) {
+      item.itemName = "normal_item";
+      item.frame = itemType;
+    } else { // items 6,7,8
+      item.itemName = "bad_item";
       item.frame = itemType;
     }
-    item.rotateMe = (Math.random()*4)-2;
 
+    item.rotateMe = (Math.random()*4)-2;
 
     game.physics.enable(item, Phaser.Physics.ARCADE);
     // shrink the bounding box of the item because there's some blank
@@ -251,22 +266,31 @@ skGame.Play.prototype = {
 
   grabItem: function(player, item) {
     var i = item._frame.index;
+    console.log(item);
 
-    if (i === 6 || i === 7  || i === 8) {
-      this.reduceLife();
-      this.isHurt = true;
-      this.sounds.hurt.play('', 0, 0.2);
-      this.hurtTime = this.game.time.now;
-    } else if (i >= 9 && i <= 16) {
-      this.updateScore(500);
-      this.sounds.coin.play('', 0, 0.2);
-    } else if(i > 16) {
-      this.updateScore(1000);
-      this.sounds.necklace.play('', 0, 0.2);
-    } else {
-      this.updateScore(100);
-      this.sounds.pickup.play('', 0, 0.2);
-    }
+    var self = this;
+    var actions = {
+      "normal_item" : function() {
+        self.updateScore(100);
+        self.sounds.pickup.play('', 0, 0.2);
+      },
+      "coin" : function() {
+        self.updateScore(500);
+        self.sounds.coin.play('', 0, 0.2);
+      },
+      "necklace" : function() {
+        self.updateScore(1000);
+        self.sounds.necklace.play('', 0, 0.2);
+      },
+      "bad_item" : function() {
+        self.reduceLife();
+        self.isHurt = true;
+        self.sounds.hurt.play('', 0, 0.2);
+        self.hurtTime = self.game.time.now;
+      }
+    };
+
+    actions[item.itemName]();
 
     item.kill();
   },
