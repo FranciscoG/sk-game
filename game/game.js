@@ -52,7 +52,8 @@ skGame.Intro = function (game) { };
 skGame.Intro.prototype = {
   create: function () {
     this.cursor = game.input.keyboard.createCursorKeys();
-    game.add.sprite(0, 0, 'start_screen');
+    var start = game.add.sprite(0, -1 * skGame.h, 'start_screen');
+    game.add.tween(start).to({y: 0}, 1300, Phaser.Easing.Bounce.Out, true);
     // start bgmusic music here?
   },
 
@@ -142,7 +143,8 @@ skGame.Play.prototype = {
 
     // shrink the bounding box of the player because there's some blank
     // space that allows collisions
-    this.player.body.setSize(60, 110, 0, -1);
+    var heightOffset = 0;
+    this.player.body.setSize(60, 110 + heightOffset, 0, 0 - heightOffset);
 
     //audio
     this.sounds = {};
@@ -171,6 +173,10 @@ skGame.Play.prototype = {
     // }, this);
 
     this.spawnItemTimer += this.time.elapsed;
+    
+    var timeArray = [500,800,1000,1200,1500,1800,2000];
+    var num = rand(timeArray.length);
+   
     // spawning an item every second
     if(this.spawnItemTimer > 1000) {
       this.spawnItemTimer = 0;
@@ -208,7 +214,7 @@ skGame.Play.prototype = {
     
     // figure out how many columns available that are the width of the sprite
     var spriteW = 60; 
-    var sp = Math.floor(w / spriteW);
+    var sp = Math.floor(w / spriteW); // calc number of columns in stage
     var dropPos = rand(sp); // get random column
 
     // now place it on screen by adding it to a group
@@ -228,38 +234,27 @@ skGame.Play.prototype = {
 
     game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
  
-    item.anchor.setTo(0.5, 0.5);
+    item.anchor.setTo(0.5, 1);
     this.itemGroup.add(item);
   },
 
   grabItem: function(player, item) {
+    var i = item._frame.index;
 
-      switch(item._frame.index) {
-        case 6:
-        case 7:
-        case 8:
-          this.reduceLife();
-          this.isHurt = true;
-          this.sounds.hurt.play('', 0, 0.2);
-          this.hurtTime = this.game.time.now;
-          break;
-        case 9:
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-        case 16:
-          this.updateScore(500);
-          this.sounds.coin.play('', 0, 0.2);
-          break;
-        default:
-          this.updateScore(100);
-          this.sounds.pickup.play('', 0, 0.2);
-      }
+    if (i === 6 || i === 7  || i === 8) {
+      this.reduceLife();
+      this.isHurt = true;
+      this.sounds.hurt.play('', 0, 0.2);
+      this.hurtTime = this.game.time.now;
+    } else if (i >= 9) {
+      this.updateScore(500);
+      this.sounds.coin.play('', 0, 0.2);
+    } else {
+      this.updateScore(100);
+      this.sounds.pickup.play('', 0, 0.2);
+    }
 
-      item.kill();
+    item.kill();
   },
 
   showScoreOnHit: function(score) {
