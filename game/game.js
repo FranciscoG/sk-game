@@ -2,8 +2,13 @@
  var skGame = {
   w : 480,
   h : 480,
-  score : 0
+  score : 0,
+  debug: false
  };
+
+ if (window.location.search && window.location.search === "?debug") {
+  skGame.debug = true;
+ }
 
 function rand(num){ return Math.floor(Math.random() * num); }
 
@@ -20,7 +25,7 @@ skGame.Load.prototype = {
     label.anchor.setTo(0.5, 0.5);
     
     // sprite sheets
-    game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 100, 120);
+    game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 70, 110);
     game.load.spritesheet('items' , 'game/assets/items.png', 60, 60);
     
     // static images
@@ -52,7 +57,7 @@ skGame.Intro.prototype = {
   },
 
   update: function() {
-    if (this.cursor.left.isDown || this.cursor.right.isDown) {
+    if (this.cursor.left.isDown || this.cursor.right.isDown || game.input.mousePointer.isDown) {
       game.state.start('Play');
     }
   }
@@ -74,7 +79,7 @@ skGame.Over.prototype = {
   },
 
   update: function() {
-    if (this.game.time.now > this.time && this.cursor.up.isDown) {
+    if (this.game.time.now > this.time && (this.cursor.up.isDown || game.input.mousePointer.isDown)) {
       game.state.start('Play');
     }
   }
@@ -135,12 +140,27 @@ skGame.Play.prototype = {
     game.physics.arcade.enable(this.player);
     this.player.body.collideWorldBounds = true;
 
+    // shrink the bounding box of the player because there's some blank
+    // space that allows collisions
+    this.player.body.setSize(60, 110, 0, 0);
+
     //audio
     this.sounds = {};
     this.sounds.pickup = game.add.audio('pickup');
     this.sounds.coin = game.add.audio('coin');
     this.sounds.hurt = game.add.audio('hurt');
 
+  },
+
+  render: function() {
+    function renderGroup(member) {
+      game.debug.body(member, 'rgba(255, 255, 255, 0.4)');
+    }
+    
+    if (skGame.debug) {
+      game.debug.body(this.player, 'rgba(255, 255, 255, 0.4)');
+      this.itemGroup.forEachAlive(renderGroup, this);
+    }
   },
 
   update: function() {
@@ -197,10 +217,10 @@ skGame.Play.prototype = {
   spawnItem: function() {
     var h = skGame.h, w = skGame.w;
     
-    // the X coordinate where this is dropping from
-    var spriteW = 60;
+    // figure out how many columns available that are the width of the sprite
+    var spriteW = 60; 
     var sp = Math.floor(w / spriteW);
-    var dropPos = rand(sp);
+    var dropPos = rand(sp); // get random column
 
     // now place it on screen by adding it to a group
     var item = game.add.sprite(dropPos * spriteW + (spriteW/2), 0, 'items');
@@ -208,8 +228,15 @@ skGame.Play.prototype = {
     // get a random Item from the spritesheet 
     var itemType = rand(10);
     item.frame = itemType;
+    if (itemType >= 9) {
+      item.animations.add('spin', [9,10,11,12,13,14,15,16], 10, true);
+      item.animations.play('spin');
+    }
 
     game.physics.enable(item, Phaser.Physics.ARCADE);
+    // shrink the bounding box of the item because there's some blank
+    item.body.setSize(55, 60, 0, 0);
+
     game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
  
     item.anchor.setTo(0.5, 0.5);
@@ -219,17 +246,24 @@ skGame.Play.prototype = {
   grabItem: function(player, item) {
 
       switch(item._frame.index) {
-        case 0:
-          this.updateScore(500);
-          this.sounds.coin.play('', 0, 0.2);
-          break;
+        case 6:
         case 7:
         case 8:
-        case 9:
           this.reduceLife();
           this.isHurt = true;
           this.sounds.hurt.play('', 0, 0.2);
           this.hurtTime = this.game.time.now;
+          break;
+        case 9:
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+        case 16:
+          this.updateScore(500);
+          this.sounds.coin.play('', 0, 0.2);
           break;
         default:
           this.updateScore(100);
