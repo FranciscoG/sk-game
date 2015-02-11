@@ -1,14 +1,25 @@
- /* global Phaser */
+/* global Phaser */
+/*
+  Grab Dem Beads!
+
+  Skeleton Krewe mascot by Christopher Kirsch
+  art: Manning Krull, http://www.manningkrull.com/
+  programming & music: Franicsco Gutierrez, http://www.franciscog.com/
+  
+  Made with Phaser HTML5 Game Framework - http://phaser.io/
+
+  Background music was created with LSDJ on a modded Gameboy  
+  Sound FX generated at: http://www.bfxr.net/ 
+ */
+
  var skGame = {
   w : 480,
   h : 480,
   score : 0,
-  debug: false
+  debug: window.location.search === "?debug",
+  isMobile: /Android|webOS|iPhone|iP[ao]d|Windows Phone/i.test(navigator.userAgent),
+  isTouch: 'ontouchstart' in window || 'onmsgesturechange' in window
  };
-
- if (window.location.search && window.location.search === "?debug") {
-  skGame.debug = true;
- }
 
 function rand(num){ return Math.floor(Math.random() * num); }
 
@@ -24,12 +35,13 @@ skGame.Load.prototype = {
     var label = game.add.text(skGame.w/2, skGame.h/2, 'loading...', { font: '30px Arial', fill: '#fff' });
     label.anchor.setTo(0.5, 0.5);
 
-    var startX = (skGame.w/2) - 100;
+    // preload bar
+    var startX = 160;
     var startY = (skGame.w/2) + 30;
     this.preloadBar = game.add.graphics(startX, startY);
     this.preloadBar.lineStyle(10, 0xffffff, 1);
     this.preloadBar.moveTo(0, 0);
-    this.preloadBar.lineTo(startX + 100, 0);
+    this.preloadBar.lineTo(startX, 0);
     this.preloadBar.scale.x = 0; // set the bar to the beginning position
 
     // scale game for smaller than 480px
@@ -48,7 +60,7 @@ skGame.Load.prototype = {
     game.load.image('start_screen', 'game/assets/start-screen.png');
     game.load.image('bg', 'game/assets/bg.png');
 
-    // make more sounds here: http://www.bfxr.net/
+    // load audio
     game.load.audio('pickup', 'game/assets/pickup.wav');
     game.load.audio('coin', 'game/assets/get_coin.wav');
     game.load.audio('hurt', 'game/assets/hurt.wav');
@@ -80,8 +92,11 @@ skGame.Intro.prototype = {
     game.add.tween(start).to({y: 0}, 1300, Phaser.Easing.Bounce.Out, true);
     
     // main bg audio
-    var iko = game.add.audio('iko');
-    iko.play('', 0, 0.2, true);
+    skGame.iko = game.add.audio('iko');
+    skGame.iko.play('', 0, 0.2, true);
+
+    // init mute key
+    skGame.mute();
   },
 
   update: function() {
@@ -104,12 +119,37 @@ skGame.Over.prototype = {
 
     this.cursor = game.input.keyboard.createCursorKeys();
     this.time = this.game.time.now + 800;
+
+    // init mute key
+    skGame.mute();
+
+    this.scoreText = game.add.text(10, 10, skGame.score, { font: '30px Arial', fill: '#fff'});
   },
 
   update: function() {
     if (this.game.time.now > this.time && (this.cursor.up.isDown || game.input.mousePointer.isDown)) {
       game.state.start('Play');
     }
+  }
+};
+
+/****************************************************************************
+  Handle Muting Background music in all states
+*/
+
+skGame.muteStatus = false;
+skGame.mute = function(){
+  this.muteKey = game.input.keyboard.addKey(Phaser.Keyboard.M);
+  this.muteKey.onDown.add(skGame.muteFunction, this);
+};
+
+skGame.muteFunction = function(){
+  if (this.muteKey.isDown && !skGame.muteStatus) {
+    skGame.iko.pause();
+    skGame.muteStatus = true;
+  } else if (this.muteKey.isDown && skGame.muteStatus) {
+    skGame.iko.resume();
+    skGame.muteStatus = false;
   }
 };
 
@@ -121,7 +161,7 @@ skGame.Play = function (game) { };
 skGame.Play.prototype = {
 
   create: function () {
-    var h = skGame.h, w = skGame.w, score = skGame.score;
+    var h = skGame.h, w = skGame.w;
 
     // add the background
     game.add.sprite(0, 0, 'bg');
@@ -132,7 +172,7 @@ skGame.Play.prototype = {
     game.physics.arcade.setBounds(0, 0, w, h - 29);
 
     // setup score
-    score = 0;
+    skGame.score = 0;
     this.scoreText = game.add.text(10, 10, "0", { font: '30px Arial', fill: '#fff'});
 
     // inituate cursor key inputs
@@ -168,22 +208,24 @@ skGame.Play.prototype = {
     game.physics.arcade.enable(this.player);
     this.player.body.collideWorldBounds = true;
 
-    // shrink the bounding box of the player because there's some blank
+    // shrink the bounding box of the player because there's some transparent
     // space that allows collisions
     var heightOffset = 30;
     this.player.body.setSize(60, 110 + heightOffset, 0, 0 - heightOffset);
 
     //audio
     this.sounds = {};
-
     // sound FX
     this.sounds.pickup = game.add.audio('pickup');
     this.sounds.coin = game.add.audio('coin');
     this.sounds.hurt = game.add.audio('hurt');
     this.sounds.necklace = game.add.audio('necklace');
 
-    // http://invrse.co/phaser-cheatsheet/
+    // create spawnItem loop
     this.looping = game.time.events.loop(1000, this.spawnItem, this);
+
+    // init mute key
+    skGame.mute();
 
   },
 
@@ -217,21 +259,22 @@ skGame.Play.prototype = {
     }
 
     // when player is moving
-    if (this.cursor.left.isDown && !this.isHurt) {
-      this.player.body.velocity.x = -350;
-      this.player.animations.play('run');
-      this.player.scale.x = 1;
-    } else if (this.cursor.right.isDown && !this.isHurt) {
-       this.player.body.velocity.x = 350;
-       this.player.scale.x = -1;
-       this.player.animations.play('run');
-    } else if (!this.isHurt) {
-      this.player.frame = 0;
+    if (!this.isHurt){
+      if (this.cursor.left.isDown) {
+        this.player.body.velocity.x = -350;
+        this.player.animations.play('run');
+        this.player.scale.x = 1;
+      } else if (this.cursor.right.isDown) {
+         this.player.body.velocity.x = 350;
+         this.player.scale.x = -1;
+         this.player.animations.play('run');
+      } else {
+        this.player.frame = 0;
+      }
     }
 
   },
   
-  //http://gamedevelopment.tutsplus.com/tutorials/getting-started-with-phaser-building-monster-wants-candy--cms-21723
   spawnItem: function() {
     var h = skGame.h, w = skGame.w;
 
