@@ -45,7 +45,7 @@ skGame.Load.prototype = {
     game.load.audio('coin', 'game/assets/get_coin.wav');
     game.load.audio('hurt', 'game/assets/hurt.wav');
     game.load.audio('necklace', 'game/assets/necklace.wav');
-    game.load.audio('iko', 'game/assets/iko.wav');
+    game.load.audio('iko', 'game/assets/iko.mp3');
 
   },
   create: function () {
