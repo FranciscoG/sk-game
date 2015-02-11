@@ -63,7 +63,10 @@ skGame.Intro.prototype = {
     this.cursor = game.input.keyboard.createCursorKeys();
     var start = game.add.sprite(0, -1 * skGame.h, 'start_screen');
     game.add.tween(start).to({y: 0}, 1300, Phaser.Easing.Bounce.Out, true);
-    // start bgmusic music here?
+    
+    // main bg audio
+    var iko = game.add.audio('iko');
+    iko.play('', 0, 0.2, true);
   },
 
   update: function() {
@@ -163,10 +166,6 @@ skGame.Play.prototype = {
     this.sounds.coin = game.add.audio('coin');
     this.sounds.hurt = game.add.audio('hurt');
     this.sounds.necklace = game.add.audio('necklace');
-
-    // main bg audio
-    this.sounds.iko = game.add.audio('iko');
-    this.sounds.iko.play('', 0, 0.2, true);
 
     // http://invrse.co/phaser-cheatsheet/
     this.looping = game.time.events.loop(1000, this.spawnItem, this);
