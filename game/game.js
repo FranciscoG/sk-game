@@ -24,6 +24,14 @@ skGame.Load.prototype = {
     var label = game.add.text(skGame.w/2, skGame.h/2, 'loading...', { font: '30px Arial', fill: '#fff' });
     label.anchor.setTo(0.5, 0.5);
 
+    var startX = (skGame.w/2) - 100;
+    var startY = (skGame.w/2) + 30;
+    this.preloadBar = game.add.graphics(startX, startY);
+    this.preloadBar.lineStyle(10, 0xffffff, 1);
+    this.preloadBar.moveTo(0, 0);
+    this.preloadBar.lineTo(startX + 100, 0);
+    this.preloadBar.scale.x = 0; // set the bar to the beginning position
+
     // scale game for smaller than 480px
     game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     game.scale.pageAlignHorizontally = true;
@@ -48,6 +56,13 @@ skGame.Load.prototype = {
     game.load.audio('iko', 'game/assets/iko.mp3');
 
   },
+
+  loadUpdate: function () {
+    // every frame during loading, set the scale.x of the bar to the progress (an integer between 0
+    // and 100) divided by 100 to give a float between 0 and 1
+    this.preloadBar.scale.x = game.load.progress * 0.01;
+  },
+
   create: function () {
     game.state.start('Intro');
   }
