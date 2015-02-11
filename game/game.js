@@ -45,9 +45,7 @@ skGame.Load.prototype = {
     game.load.audio('coin', 'game/assets/get_coin.wav');
     game.load.audio('hurt', 'game/assets/hurt.wav');
     game.load.audio('necklace', 'game/assets/necklace.wav');
-    
-    // parade sounds source: https://www.freesound.org/people/soundesigner/sounds/116399/
-    game.load.audio('parade', 'game/assets/parade.wav', true);
+    game.load.audio('iko', 'game/assets/iko.wav');
 
   },
   create: function () {
@@ -159,13 +157,16 @@ skGame.Play.prototype = {
 
     //audio
     this.sounds = {};
+
+    // sound FX
     this.sounds.pickup = game.add.audio('pickup');
     this.sounds.coin = game.add.audio('coin');
     this.sounds.hurt = game.add.audio('hurt');
     this.sounds.necklace = game.add.audio('necklace');
-    
-    this.sounds.parade = game.add.audio('parade');
-    this.sounds.parade.play('', 0, 1, true);
+
+    // main bg audio
+    this.sounds.iko = game.add.audio('iko');
+    this.sounds.iko.play('', 0, 0.2, true);
 
     // http://invrse.co/phaser-cheatsheet/
     this.looping = game.time.events.loop(1000, this.spawnItem, this);
@@ -221,7 +222,7 @@ skGame.Play.prototype = {
     var h = skGame.h, w = skGame.w;
 
     // figure out how many columns available that are the width of the sprite
-    var spriteW = 60; 
+    var spriteW = 60;
     var sp = Math.floor(w / spriteW); // calc number of columns in stage
     var dropPos = rand(sp); // get random column
 
