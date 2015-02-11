@@ -53,6 +53,7 @@ skGame.Load.prototype = {
     // sprite sheets
     game.load.spritesheet('player', 'game/assets/skeleton-sprite-sheet.png', 70, 110);
     game.load.spritesheet('items' , 'game/assets/items.png', 60, 60);
+    game.load.spritesheet('dying' , 'game/assets/skeleton-dying-sprite.png', 130, 120);
     
     // static images
     game.load.image('heart', 'game/assets/heart.png');
@@ -77,6 +78,7 @@ skGame.Load.prototype = {
 
   create: function () {
     game.state.start('Intro');
+    //game.state.start('Over');
   }
 };
 
@@ -88,6 +90,8 @@ skGame.Intro = function (game) { };
 skGame.Intro.prototype = {
   create: function () {
     this.cursor = game.input.keyboard.createCursorKeys();
+    
+    // bring in the start streen from the top and make it bounce
     var start = game.add.sprite(0, -1 * skGame.h, 'start_screen');
     game.add.tween(start).to({y: 0}, 1300, Phaser.Easing.Bounce.Out, true);
     
@@ -112,18 +116,31 @@ skGame.Intro.prototype = {
 skGame.Over = function (game) { };
 
 skGame.Over.prototype = {
+  init: function(player){
+    this.player = player;
+  },
+
   create: function () {
-    
+
     game.add.sprite(0, 0, 'bg');
     game.add.sprite(0, 0, 'game_over');
 
+    // position and play the dying sprite animation
+    var posX = this.player.position.x - 18;
+    var posY = skGame.h - (120 + 50);
+    var dead = game.add.sprite(posX, posY, 'dying');
+    dead.scale.x = this.player.scale.x;
+    dead.animations.add('death', [0,8,0,8,0,1,2,3,4,5,6,7], 20, false).play();
+
+    // setup keyboard input capture with a short time delay
     this.cursor = game.input.keyboard.createCursorKeys();
     this.time = this.game.time.now + 800;
 
     // init mute key
     skGame.mute();
 
-    this.scoreText = game.add.text(10, 10, skGame.score, { font: '30px Arial', fill: '#fff'});
+    // placing the score in the game overscreen as well
+    game.add.text(10, 10, skGame.score, { font: '30px Arial', fill: '#fff'});
   },
 
   update: function() {
@@ -210,7 +227,7 @@ skGame.Play.prototype = {
 
     // shrink the bounding box of the player because there's some transparent
     // space that allows collisions
-    var heightOffset = 30;
+    var heightOffset = 0;
     this.player.body.setSize(60, 110 + heightOffset, 0, 0 - heightOffset);
 
     //audio
@@ -360,9 +377,10 @@ skGame.Play.prototype = {
   },
 
   reduceLife: function(){
+    console.log(this.player);
     this.health -= 1;
     if (this.health === 0) {
-      game.state.start('Over');
+      game.state.start('Over',true,false, this.player);
     } else {
       var heart = this.heartGroup.getFirstExists(true);
       heart.kill();
