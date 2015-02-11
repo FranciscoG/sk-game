@@ -4,7 +4,7 @@
 
 Skeleton Krewe mascot by Christopher Kirsch   
 art: Manning Krull, http://www.manningkrull.com/  
-programming & music: Franicsco Gutierrez, http://www.franciscog.com/  
+programming & music: Francisco Gutierrez, http://www.franciscog.com/  
   
 Made with Phaser HTML5 Game Framework - http://phaser.io/  
 

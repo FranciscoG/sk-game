@@ -4,7 +4,7 @@
 
   Skeleton Krewe mascot by Christopher Kirsch
   art: Manning Krull, http://www.manningkrull.com/
-  programming & music: Franicsco Gutierrez, http://www.franciscog.com/
+  programming & music: Francisco Gutierrez, http://www.franciscog.com/
   
   Made with Phaser HTML5 Game Framework - http://phaser.io/
 
@@ -78,7 +78,6 @@ skGame.Load.prototype = {
 
   create: function () {
     game.state.start('Intro');
-    //game.state.start('Over');
   }
 };
 
@@ -127,7 +126,7 @@ skGame.Over.prototype = {
 
     // position and play the dying sprite animation
     var posX = this.player.position.x - 18;
-    var posY = skGame.h - (120 + 50);
+    var posY = skGame.h - (120 + 29);
     var dead = game.add.sprite(posX, posY, 'dying');
     dead.scale.x = this.player.scale.x;
     dead.animations.add('death', [0,8,0,8,0,1,2,3,4,5,6,7], 20, false).play();
@@ -243,9 +242,33 @@ skGame.Play.prototype = {
 
     // init mute key
     skGame.mute();
-
+    
+    // show item paths in debug mode
+    this.showColumns();
   },
 
+  // only used for debugging
+  showColumns: function(){
+    if (skGame.debug) {
+      var spriteW = 60;
+      var totalColumns = Math.floor(skGame.w / spriteW); // calc number of columns in stage
+      var currCol = 0;
+      var col;
+
+      while(totalColumns > 0){
+        // show columns
+        col = game.add.graphics(currCol, 0);
+        col.lineStyle(10, 0xffffff, 0.4);
+        col.moveTo(0, 0);
+        col.lineTo(0, skGame.h);
+        currCol += spriteW;
+        totalColumns--;
+      }
+      col = null;
+    }
+  },
+
+  // eveything in this render function is only used during debug
   render: function() {
     function renderGroup(member) {
       game.debug.body(member, 'rgba(255, 255, 255, 0.4)');
@@ -292,18 +315,24 @@ skGame.Play.prototype = {
 
   },
   
+  /**
+   * Handles spawning random items
+   * @return {undefined}
+   */
   spawnItem: function() {
     var h = skGame.h, w = skGame.w;
 
+    // I want the items to fall in specific columns on the screen so first I need to
     // figure out how many columns available that are the width of the sprite
     var spriteW = 60;
     var sp = Math.floor(w / spriteW); // calc number of columns in stage
     var dropPos = rand(sp); // get random column
 
     // now place it on screen by adding it to a group
-    var item = game.add.sprite(dropPos * spriteW + (spriteW/2), 0, 'items');
+    var itemX = dropPos * spriteW + (spriteW/2);
+    var item = game.add.sprite(itemX, 0, 'items', null, this.itemGroup);
 
-    // get a random Item from the spritesheet 
+    // get a random Item from the spritesheet. 11 items total
     var itemType = rand(11);
     if (itemType === 10) {
       item.animations.add('blink', [17,18], 10, true);
@@ -324,13 +353,19 @@ skGame.Play.prototype = {
 
     // enable physics
     game.physics.enable(item, Phaser.Physics.ARCADE);
+    
     // shrink the bounding box of the item because there's some transparent area
     item.body.setSize(55, 60, 0, 0);
     item.anchor.setTo(0.5, 0.5);
-    this.itemGroup.add(item);
     game.physics.arcade.overlap(this.player, this.itemGroup, this.grabItem, null, this);
   },
 
+  /**
+   * Callback function for player overlap collision with an item
+   * @param  {object} player 
+   * @param  {object} item   specific item collided with
+   * @return {undefined}
+   */
   grabItem: function(player, item) {
     item.kill();
 
@@ -359,6 +394,12 @@ skGame.Play.prototype = {
     actions[item.itemName]();
   },
 
+  /**
+   * displays the score of the item collided with above the player's head and 
+   * makes it float up and fade away
+   * @param  {number} score
+   * @return {undefined}
+   */
   showScoreOnHit: function(score) {
     var h = skGame.h, w = skGame.w;
     var x = this.player.position.x;
@@ -368,6 +409,11 @@ skGame.Play.prototype = {
     game.add.tween(myText).to({alpha: 0}, 600, Phaser.Easing.Linear.None, true);
   },
   
+  /**
+   * updates the score on screen
+   * @param  {number} n 
+   * @return {undefined}
+   */
   updateScore: function (n) {
     if (!this.isHurt) {
       this.showScoreOnHit(n);
@@ -376,8 +422,11 @@ skGame.Play.prototype = {
     }
   },
 
+  /**
+   * reduces player health by 1, switches state to 'Over' is health is 0
+   * @return {undefined}
+   */
   reduceLife: function(){
-    console.log(this.player);
     this.health -= 1;
     if (this.health === 0) {
       game.state.start('Over',true,false, this.player);
