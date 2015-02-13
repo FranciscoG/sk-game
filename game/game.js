@@ -101,13 +101,10 @@ skGame.Intro.prototype = {
     // init mute key
     skGame.mute();
 
-    game.input.onTap.add(function(){
-      game.state.start('Play');
-    }, this);
   },
 
   update: function() {
-    if (this.cursor.left.isDown || this.cursor.right.isDown) {
+    if (this.cursor.left.isDown || this.cursor.right.isDown || game.input.pointer1.isDown || game.input.mousePointer.isDown) {
       game.state.start('Play');
     }
   }
@@ -147,7 +144,7 @@ skGame.Over.prototype = {
   },
 
   update: function() {
-    if (this.game.time.now > this.time && (this.cursor.up.isDown || game.input.mousePointer.isDown)) {
+    if (this.game.time.now > this.time && (this.cursor.up.isDown || game.input.mousePointer.isDown || game.input.pointer1.isDown)) {
       game.state.start('Play');
     }
   }
@@ -312,22 +309,21 @@ skGame.Play.prototype = {
   movePlayer: function(){
     var RIGHT = 1, LEFT = 0;
     
+    this.player.animations.play('run');
+
     function moveLeft(context, vel){
       var v = vel || -350;
       context.player.body.velocity.x = v;
-      context.player.animations.play('run');
       context.player.scale.x = 1;
     }
     
     function moveRight(context, vel){
-       var v = vel || 350;
+      var v = vel || 350;
       context.player.body.velocity.x = v;
       context.player.scale.x = -1;
-      context.player.animations.play('run');
     }
 
     if (game.input.pointer1.isDown){
-      console.log('touch');
       if (Math.floor(game.input.x/(game.width/2)) === LEFT) {
         moveLeft(this);
       }
