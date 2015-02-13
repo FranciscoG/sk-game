@@ -100,10 +100,14 @@ skGame.Intro.prototype = {
 
     // init mute key
     skGame.mute();
+
+    game.input.onTap.add(function(){
+      game.state.start('Play');
+    }, this);
   },
 
   update: function() {
-    if (this.cursor.left.isDown || this.cursor.right.isDown || game.input.mousePointer.isDown) {
+    if (this.cursor.left.isDown || this.cursor.right.isDown) {
       game.state.start('Play');
     }
   }
@@ -226,7 +230,7 @@ skGame.Play.prototype = {
 
     // shrink the bounding box of the player because there's some transparent
     // space that allows collisions
-    var heightOffset = 0;
+    var heightOffset = 0; // messing around with the height to see if it affected collision
     this.player.body.setSize(60, 110 + heightOffset, 0, 0 - heightOffset);
 
     //audio
@@ -300,19 +304,46 @@ skGame.Play.prototype = {
 
     // when player is moving
     if (!this.isHurt){
-      if (this.cursor.left.isDown) {
-        this.player.body.velocity.x = -350;
-        this.player.animations.play('run');
-        this.player.scale.x = 1;
-      } else if (this.cursor.right.isDown) {
-         this.player.body.velocity.x = 350;
-         this.player.scale.x = -1;
-         this.player.animations.play('run');
-      } else {
-        this.player.frame = 0;
-      }
+      this.movePlayer();
     }
 
+  },
+
+  movePlayer: function(){
+    var RIGHT = 1, LEFT = 0;
+    
+    function moveLeft(context, vel){
+      var v = vel || -350;
+      context.player.body.velocity.x = v;
+      context.player.animations.play('run');
+      context.player.scale.x = 1;
+    }
+    
+    function moveRight(context, vel){
+       var v = vel || 350;
+      context.player.body.velocity.x = v;
+      context.player.scale.x = -1;
+      context.player.animations.play('run');
+    }
+
+    if (game.input.pointer1.isDown){
+      console.log('touch');
+      if (Math.floor(game.input.x/(game.width/2)) === LEFT) {
+        moveLeft(this);
+      }
+   
+      if (Math.floor(game.input.x/(game.width/2)) === RIGHT) {
+        moveRight(this);
+      }
+    
+    } else if (this.cursor.left.isDown){
+      moveLeft(this);
+    } else if (this.cursor.right.isDown) {
+      moveRight(this);
+    } else {
+      this.player.animations.stop();
+      this.player.frame = 0;
+    }
   },
   
   /**
@@ -439,7 +470,7 @@ skGame.Play.prototype = {
 };
 
 
-var game = new Phaser.Game(skGame.w, skGame.h, Phaser.AUTO, 'skeletonGame');
+var game = new Phaser.Game(skGame.w, skGame.h, Phaser.CANVAS, 'skeletonGame');
 
 game.state.add('Load', skGame.Load);
 game.state.add('Intro', skGame.Intro);
