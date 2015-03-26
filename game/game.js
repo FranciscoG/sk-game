@@ -306,6 +306,11 @@ skGame.Play.prototype = {
 
   },
 
+  /**
+   * Moves this.player sprite. Called from the Play.update function
+   * handles both touch and cursor
+   * @return {undefined}
+   */
   movePlayer: function(){
     var RIGHT = 1, LEFT = 0;
     
