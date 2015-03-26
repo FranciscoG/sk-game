@@ -94,17 +94,16 @@ skGame.Intro.prototype = {
     var start = game.add.sprite(0, -1 * skGame.h, 'start_screen');
     game.add.tween(start).to({y: 0}, 1300, Phaser.Easing.Bounce.Out, true);
     
-    // main bg audio
-    skGame.iko = game.add.audio('iko');
-    skGame.iko.play('', 0, 0.2, true);
-
-    // init mute key
-    skGame.mute();
-
   },
 
   update: function() {
     if (this.cursor.left.isDown || this.cursor.right.isDown || game.input.pointer1.isDown || game.input.mousePointer.isDown) {
+      // main bg audio
+      skGame.iko = game.add.audio('iko');
+      skGame.iko.play('', 0, 0.2, true);
+
+      // init mute key
+      skGame.mute();
       game.state.start('Play');
     }
   }
