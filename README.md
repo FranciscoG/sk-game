@@ -2,7 +2,7 @@
 
 # Grab Dem Beads!
 
-Skeleton Krewe mascot by Christopher Kirsch   
+Skeleton Krewe mascot by Skeleton Krewe   
 art: Manning Krull, http://www.manningkrull.com/  
 programming & music: Francisco Gutierrez, http://www.franciscog.com/  
   
